@@ -15,8 +15,9 @@ jobs:
       - name: Build Android App from Scratch
         run: |
           mkdir -p app/src/main/java/com/pouyachat/app
+          mkdir -p app/src/main/res/values
           
-          # اضافه کردن مخازن دانلود گوگل (رفع ارور بیلد)
+          # تنظیمات مخازن گوگل
           cat << 'EOF' > settings.gradle
           pluginManagement {
               repositories {
@@ -53,20 +54,24 @@ jobs:
               compileOptions { sourceCompatibility = JavaVersion.VERSION_1_8; targetCompatibility = JavaVersion.VERSION_1_8 }
               kotlinOptions { jvmTarget = "1.8" }
           }
-          dependencies {
-              implementation("androidx.core:core-ktx:1.12.0")
-              implementation("androidx.appcompat:appcompat:1.6.1")
-          }
           EOF
           
+          # ساخت فایل اسم برنامه
+          cat << 'EOF' > app/src/main/res/values/strings.xml
+          <resources>
+              <string name="app_name">Pouya Chat</string>
+          </resources>
+          EOF
+          
+          # شناسنامه اندروید با تم خالص و سبک
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <application
                   android:allowBackup="true"
-                  android:label="Pouya Chat"
-                  android:theme="@style/Theme.AppCompat.NoActionBar">
+                  android:label="@string/app_name"
+                  android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
@@ -80,16 +85,17 @@ jobs:
           </manifest>
           EOF
           
+          # کدهای کاتلین (بدون وابستگی‌های سنگین)
           cat << 'EOF' > app/src/main/java/com/pouyachat/app/MainActivity.kt
           package com.pouyachat.app
           import android.annotation.SuppressLint
+          import android.app.Activity
           import android.os.Bundle
           import android.webkit.WebChromeClient
           import android.webkit.WebView
           import android.webkit.WebViewClient
-          import androidx.appcompat.app.AppCompatActivity
 
-          class MainActivity : AppCompatActivity() {
+          class MainActivity : Activity() {
               private lateinit var webView: WebView
               @SuppressLint("SetJavaScriptEnabled")
               override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,6 +109,8 @@ jobs:
                   }
                   webView.webViewClient = WebViewClient()
                   webView.webChromeClient = WebChromeClient()
+                  
+                  // آدرس سایت شما
                   webView.loadUrl("https://chat.pouyamweb.click")
               }
               @Deprecated("Deprecated in Java")
@@ -115,7 +123,9 @@ jobs:
           echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" > gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           
+          # اجرای کامپایلر
           gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
